@@ -12,7 +12,7 @@ const Store = (() => {
   }
 
   function isGuestMode() {
-    return isGuest || !auth.currentUser || localStorage.getItem('iron_log_guest_mode') === 'true';
+    return isGuest || localStorage.getItem('iron_log_guest_mode') === 'true';
   }
 
   function uid() {
