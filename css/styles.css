@@ -156,6 +156,15 @@ input, select {
   transform: translateY(0);
 }
 
+.btn-guest {
+  margin-top: 12px;
+  padding: 12px 28px;
+  border-radius: 50px;
+  font-size: 14px;
+  font-weight: 600;
+  width: auto;
+}
+
 .auth-note {
   margin-top: 24px;
   font-size: 13px;

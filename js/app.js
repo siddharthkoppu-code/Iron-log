@@ -1,4 +1,4 @@
-// Main App Controller — Auth, Tab Navigation, Initialization
+// Main App Controller — Auth, Guest Mode, Tab Navigation, Initialization
 const App = (() => {
   function init() {
     setupAuth();
@@ -6,48 +6,94 @@ const App = (() => {
     setupExport();
   }
 
-  // ---- Authentication ----
+  // ---- Authentication & Guest Mode ----
 
   function setupAuth() {
     const authScreen = document.getElementById('auth-screen');
     const appScreen = document.getElementById('app-screen');
     const signInBtn = document.getElementById('google-sign-in');
+    const guestBtn = document.getElementById('guest-sign-in');
     const signOutBtn = document.getElementById('sign-out-btn');
 
+    // Google Sign-In
     signInBtn.addEventListener('click', async () => {
+      // If on file:/// protocol, inform the user
+      if (window.location.protocol === 'file:') {
+        Gamification.showToast('ℹ️ Google Sign-In requires http:// or GitHub Pages. Using Guest Mode for local file view.', 'default', 5000);
+        enterGuestMode();
+        return;
+      }
+
       try {
         const provider = new firebase.auth.GoogleAuthProvider();
         await auth.signInWithPopup(provider);
       } catch (err) {
         console.error('Sign-in error:', err);
-        if (err.code !== 'auth/popup-closed-by-user') {
-          Gamification.showToast('Sign-in failed. Please try again.');
+        if (err.code === 'auth/popup-blocked') {
+          Gamification.showToast('Popup blocked by browser. Please allow popups for this site.');
+        } else if (err.code === 'auth/unauthorized-domain') {
+          Gamification.showToast('Domain not authorized in Firebase Console. Using guest mode.');
+          enterGuestMode();
+        } else if (err.code !== 'auth/popup-closed-by-user') {
+          Gamification.showToast(`Sign-in note: ${err.message || 'Error connecting to Google'}`);
         }
       }
     });
 
-    signOutBtn.addEventListener('click', async () => {
-      await auth.signOut();
+    // Guest Mode Button
+    guestBtn.addEventListener('click', () => {
+      enterGuestMode();
     });
 
+    // Sign Out
+    signOutBtn.addEventListener('click', async () => {
+      Store.setGuestMode(false);
+      try {
+        if (auth.currentUser) await auth.signOut();
+      } catch (e) {
+        console.warn('Sign-out note:', e);
+      }
+      authScreen.classList.add('active');
+      appScreen.classList.remove('active');
+    });
+
+    // Firebase Auth State Listener
     auth.onAuthStateChanged(async (user) => {
       if (user) {
+        Store.setGuestMode(false);
         authScreen.classList.remove('active');
         appScreen.classList.add('active');
-        await onSignedIn();
+        await Store.syncLocalToFirestore();
+        await onAppLoaded();
       } else {
-        authScreen.classList.add('active');
-        appScreen.classList.remove('active');
+        // If guest mode was previously chosen in this browser session
+        if (Store.isGuestMode()) {
+          authScreen.classList.remove('active');
+          appScreen.classList.add('active');
+          await onAppLoaded();
+        } else {
+          authScreen.classList.add('active');
+          appScreen.classList.remove('active');
+        }
       }
     });
   }
 
-  async function onSignedIn() {
+  async function enterGuestMode() {
+    const authScreen = document.getElementById('auth-screen');
+    const appScreen = document.getElementById('app-screen');
+    Store.setGuestMode(true);
+    authScreen.classList.remove('active');
+    appScreen.classList.add('active');
+    await onAppLoaded();
+    Gamification.showToast('⚡ Running in Local Mode — data saved to this device', 'default');
+  }
+
+  async function onAppLoaded() {
     await Gamification.loadPRs();
     await Gamification.updateStreakDisplay();
     await WorkoutTab.init();
     await ProgressTab.init();
-    // History loads lazily when tab is first opened
   }
 
   // ---- Tab Navigation ----

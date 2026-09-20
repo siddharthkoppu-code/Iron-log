@@ -14,11 +14,9 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-// Enable offline persistence
-db.enablePersistence({ synchronizeTabs: true }).catch(err => {
-  if (err.code === 'failed-precondition') {
-    console.warn('Firestore persistence unavailable: multiple tabs open.');
-  } else if (err.code === 'unimplemented') {
-    console.warn('Firestore persistence not supported in this browser.');
-  }
-});
+// Enable offline persistence safely (only works on http/https)
+if (window.location.protocol.startsWith('http')) {
+  db.enablePersistence({ synchronizeTabs: true }).catch(err => {
+    console.warn('Firestore offline persistence notice:', err.message || err.code);
+  });
+}
