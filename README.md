@@ -19,6 +19,20 @@ A modern, mobile-first workout tracking progressive web app built for progressiv
 
 ---
 
+## Running Locally
+
+### Option A: Local Web Server (Recommended for Google Sign-In testing)
+Double-click `start-server.bat` in the project root or run:
+```bash
+python -m http.server 8000
+```
+Then visit `http://localhost:8000` in your browser.
+
+### Option B: Guest / Offline Mode (Direct File Open)
+You can directly open `index.html` in any browser. Click **"Continue as Guest (Offline)"** to use the complete app with data saved locally to your device's `localStorage`.
+
+---
+
 ## Setup & Deployment to GitHub Pages
 
 ### 1. Firebase Configuration
