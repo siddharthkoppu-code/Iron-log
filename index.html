@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#6C5CE7">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Iron Log — Workout Tracker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <!-- Auth Screen -->
+  <div id="auth-screen" class="screen active">
+    <div class="auth-container">
+      <div class="auth-logo">🏋️</div>
+      <h1 class="auth-title">Iron Log</h1>
+      <p class="auth-subtitle">Track your lifts. Beat your PRs.</p>
+      <button id="google-sign-in" class="btn btn-google">
+        <svg width="20" height="20" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.27-4.74 3.27-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+        Sign in with Google
+      </button>
+      <p class="auth-note">Your data syncs across all your devices</p>
+    </div>
+  </div>
+
+  <!-- Main App -->
+  <div id="app-screen" class="screen">
+
+    <!-- Header -->
+    <header class="app-header">
+      <div class="header-left">
+        <h1 class="header-title">Iron Log</h1>
+        <span id="streak-badge" class="streak-badge" style="display:none">🔥 <span id="streak-count">0</span></span>
+      </div>
+      <div class="header-right">
+        <button id="export-btn" class="btn-icon" title="Export data">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        </button>
+        <button id="sign-out-btn" class="btn-icon" title="Sign out">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Tab Content -->
+    <main class="tab-content">
+
+      <!-- Workout Tab -->
+      <section id="tab-workout" class="tab-panel active">
+        <div class="workout-header">
+          <div class="workout-toggle">
+            <button class="toggle-btn active" data-workout="A">Workout A</button>
+            <button class="toggle-btn" data-workout="B">Workout B</button>
+          </div>
+          <span class="workout-day" id="workout-day-label">Mon / Fri</span>
+        </div>
+        <div id="exercise-list" class="exercise-list"></div>
+        <button id="add-exercise-btn" class="btn btn-secondary btn-add-exercise">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add Exercise
+        </button>
+        <button id="save-workout-btn" class="btn btn-primary btn-save">Save Workout</button>
+      </section>
+
+      <!-- Progress Tab -->
+      <section id="tab-progress" class="tab-panel">
+        <div class="progress-section">
+          <h2 class="section-title">Exercise Progress</h2>
+          <select id="exercise-select" class="select-input">
+            <option value="">Select an exercise...</option>
+          </select>
+          <div id="progress-stats" class="stats-row" style="display:none">
+            <div class="stat-card">
+              <span class="stat-label">Latest</span>
+              <span class="stat-value" id="stat-latest">—</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-label">PR</span>
+              <span class="stat-value" id="stat-pr">—</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-label">Change</span>
+              <span class="stat-value" id="stat-change">—</span>
+            </div>
+          </div>
+          <div class="chart-container" id="progress-chart-container" style="display:none">
+            <canvas id="progress-chart"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <!-- Body Weight Tab -->
+      <section id="tab-bodyweight" class="tab-panel">
+        <div class="bodyweight-section">
+          <h2 class="section-title">Body Weight</h2>
+          <div class="bodyweight-input-row">
+            <input type="number" id="bw-input" class="input-field" placeholder="Weight (kg)" step="0.1" min="0">
+            <button id="bw-log-btn" class="btn btn-primary">Log</button>
+          </div>
+          <div id="bw-stats" class="stats-row" style="display:none">
+            <div class="stat-card">
+              <span class="stat-label">Current</span>
+              <span class="stat-value" id="bw-current">—</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-label">Change</span>
+              <span class="stat-value" id="bw-change">—</span>
+            </div>
+          </div>
+          <div class="chart-container" id="bw-chart-container" style="display:none">
+            <canvas id="bw-chart"></canvas>
+          </div>
+          <div id="bw-log-list" class="bw-log-list"></div>
+        </div>
+      </section>
+
+      <!-- History Tab -->
+      <section id="tab-history" class="tab-panel">
+        <h2 class="section-title">Workout History</h2>
+        <div id="history-list" class="history-list"></div>
+        <div id="history-empty" class="empty-state" style="display:none">
+          <span class="empty-icon">📋</span>
+          <p>No workouts logged yet.<br>Start your first session!</p>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Bottom Nav -->
+    <nav class="bottom-nav">
+      <button class="nav-btn active" data-tab="workout">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6.5 6.5h11M4 12h16M6.5 17.5h11"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="6.5" r="2.5"/><circle cx="4" cy="12" r="2"/><circle cx="20" cy="12" r="2"/><circle cx="6.5" cy="17.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></svg>
+        <span>Workout</span>
+      </button>
+      <button class="nav-btn" data-tab="progress">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        <span>Progress</span>
+      </button>
+      <button class="nav-btn" data-tab="bodyweight">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a4 4 0 014 4 4 4 0 01-4 4 4 4 0 01-4-4 4 4 0 014-4zM16 21v-2a4 4 0 00-8 0v2"/></svg>
+        <span>Weight</span>
+      </button>
+      <button class="nav-btn" data-tab="history">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <span>History</span>
+      </button>
+    </nav>
+
+  </div>
+
+  <!-- Add Exercise Modal -->
+  <div id="add-exercise-modal" class="modal-overlay" style="display:none">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Add Custom Exercise</h3>
+        <button class="modal-close" data-close-modal>&times;</button>
+      </div>
+      <div class="modal-body">
+        <label class="input-label">Exercise Name</label>
+        <input type="text" id="custom-ex-name" class="input-field" placeholder="e.g. Bicep Curls">
+        <label class="input-label">Type</label>
+        <select id="custom-ex-type" class="select-input">
+          <option value="weighted">Weighted (kg × reps)</option>
+          <option value="reps">Reps Only</option>
+          <option value="timed">Timed (seconds)</option>
+          <option value="cardio">Cardio (minutes)</option>
+        </select>
+        <label class="input-label">Number of Sets</label>
+        <input type="number" id="custom-ex-sets" class="input-field" value="3" min="1" max="10">
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-close-modal>Cancel</button>
+        <button id="custom-ex-add" class="btn btn-primary">Add</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- Firebase SDK (v9 compat for simplicity on static hosting) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+
+  <!-- App Scripts -->
+  <script src="js/firebase-config.js"></script>
+  <script src="js/presets.js"></script>
+  <script src="js/store.js"></script>
+  <script src="js/gamification.js"></script>
+  <script src="js/workout.js"></script>
+  <script src="js/progress.js"></script>
+  <script src="js/history.js"></script>
+  <script src="js/app.js"></script>
+
+</body>
+</html>
