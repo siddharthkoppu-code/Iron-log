@@ -183,6 +183,47 @@
     </div>
   </div>
 
+  <!-- Export Modal -->
+  <div id="export-modal" class="modal-overlay" style="display:none">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Export Workout Log</h3>
+        <button class="modal-close" data-close-export-modal>&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="export-desc">Choose how you want to download your workout data:</p>
+        <div class="export-options">
+          <button id="export-pdf-btn" class="export-option-card">
+            <div class="export-icon">📄</div>
+            <div class="export-info">
+              <span class="export-title">PDF / Printable Report</span>
+              <span class="export-sub">Formatted report with PRs, workout history & stats</span>
+            </div>
+          </button>
+
+          <button id="export-doc-btn" class="export-option-card">
+            <div class="export-icon">📝</div>
+            <div class="export-info">
+              <span class="export-title">Word Document (.doc)</span>
+              <span class="export-sub">Structured document with tables for MS Word / Google Docs</span>
+            </div>
+          </button>
+
+          <button id="export-json-btn" class="export-option-card">
+            <div class="export-icon">💾</div>
+            <div class="export-info">
+              <span class="export-title">JSON Data Backup</span>
+              <span class="export-sub">Raw data file for full backup & cloud restore</span>
+            </div>
+          </button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-close-export-modal>Cancel</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Toast Container -->
   <div id="toast-container" class="toast-container"></div>
 

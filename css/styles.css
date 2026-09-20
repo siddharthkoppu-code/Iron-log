@@ -996,6 +996,66 @@ input, select {
   border-radius: 4px;
 }
 
+/* --- Export Modal Options --- */
+.export-desc {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 16px;
+}
+
+.export-options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.export-option-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-sm);
+  text-align: left;
+  width: 100%;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.export-option-card:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--color-primary);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.export-option-card:active {
+  transform: translateY(0);
+}
+
+.export-icon {
+  font-size: 28px;
+  flex-shrink: 0;
+}
+
+.export-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.export-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.export-sub {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
 /* --- Utility --- */
 .hidden { display: none !important; }
 

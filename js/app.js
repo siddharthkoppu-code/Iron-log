@@ -1,4 +1,4 @@
-// Main App Controller — Auth, Guest Mode, Tab Navigation, Initialization
+// Main App Controller — Auth, Guest Mode, Tab Navigation, Modals, Initialization
 const App = (() => {
   function init() {
     setupAuth();
@@ -126,12 +126,53 @@ const App = (() => {
     });
   }
 
-  // ---- Export ----
+  // ---- Export Modal & Actions ----
 
   function setupExport() {
-    document.getElementById('export-btn').addEventListener('click', () => {
-      Gamification.exportData();
+    const exportBtn = document.getElementById('export-btn');
+    const modal = document.getElementById('export-modal');
+    const pdfBtn = document.getElementById('export-pdf-btn');
+    const docBtn = document.getElementById('export-doc-btn');
+    const jsonBtn = document.getElementById('export-json-btn');
+    const closeBtns = document.querySelectorAll('[data-close-export-modal]');
+
+    if (exportBtn) {
+      exportBtn.addEventListener('click', () => {
+        Gamification.openExportModal();
+      });
+    }
+
+    if (pdfBtn) {
+      pdfBtn.addEventListener('click', () => {
+        Gamification.exportPDF();
+      });
+    }
+
+    if (docBtn) {
+      docBtn.addEventListener('click', () => {
+        Gamification.exportWord();
+      });
+    }
+
+    if (jsonBtn) {
+      jsonBtn.addEventListener('click', () => {
+        Gamification.exportJSON();
+      });
+    }
+
+    closeBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        Gamification.closeExportModal();
+      });
     });
+
+    if (modal) {
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+          Gamification.closeExportModal();
+        }
+      });
+    }
   }
 
   return { init };
