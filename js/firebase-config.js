@@ -1,12 +1,12 @@
 // Firebase Configuration
-// Replace these values with your own Firebase project config
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyCEtY4ktwlhPq7sV5CIkg56HC_W59t9UKA",
+  authDomain: "iron-log-c8b33.firebaseapp.com",
+  projectId: "iron-log-c8b33",
+  storageBucket: "iron-log-c8b33.firebasestorage.app",
+  messagingSenderId: "164681992807",
+  appId: "1:164681992807:web:086778f133b2cd0c1ae2c2",
+  measurementId: "G-P0YD5TDH6Z"
 };
 
 firebase.initializeApp(firebaseConfig);
