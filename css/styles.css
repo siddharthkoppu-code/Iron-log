@@ -770,31 +770,58 @@ input, select {
   color: var(--color-primary-light);
 }
 
-.history-set {
+.history-sets-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.history-set-row {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 4px 0;
-  font-size: 13px;
-  color: var(--text-secondary);
-}
-
-.history-set .editable-value {
+  justify-content: space-between;
   background: var(--bg-input);
-  border: 1px solid transparent;
-  border-radius: 6px;
-  padding: 2px 8px;
-  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-xs);
+  padding: 6px 12px;
   font-size: 13px;
-  font-weight: 500;
-  width: 60px;
-  text-align: center;
-  transition: border-color var(--transition-fast);
-  outline: none;
 }
 
-.history-set .editable-value:focus {
-  border-color: var(--color-primary);
+.history-set-num {
+  font-weight: 600;
+  color: var(--text-muted);
+  font-size: 12px;
+  min-width: 45px;
+}
+
+.history-set-value {
+  font-weight: 600;
+  color: var(--text-primary);
+  flex: 1;
+  text-align: center;
+}
+
+.history-set-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: 700;
+  margin-left: 8px;
+}
+
+.history-set-status.completed {
+  background: rgba(0, 184, 148, 0.15);
+  color: var(--color-success);
+}
+
+.history-set-status.skipped {
+  background: rgba(107, 107, 133, 0.15);
+  color: var(--text-muted);
 }
 
 /* --- Modal --- */

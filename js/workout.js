@@ -2,6 +2,8 @@
 const WorkoutTab = (() => {
   let currentWorkout = 'A';
   let customExercises = [];
+  let initialized = false;
+  let renderSeq = 0;
 
   function todayStr() {
     return new Date().toISOString().split('T')[0];
@@ -10,20 +12,27 @@ const WorkoutTab = (() => {
   async function init() {
     customExercises = await Store.getCustomExercises();
     await renderExercises();
-    setupToggle();
-    setupAddExercise();
-    setupSave();
+
+    if (!initialized) {
+      setupToggle();
+      setupAddExercise();
+      setupSave();
+      initialized = true;
+    }
   }
 
   function setupToggle() {
     document.querySelectorAll('.toggle-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', async () => {
         document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         currentWorkout = btn.dataset.workout;
-        document.getElementById('workout-day-label').textContent =
-          currentWorkout === 'A' ? 'Mon / Fri' : 'Wed';
-        renderExercises();
+
+        const dayLabel = document.getElementById('workout-day-label');
+        if (dayLabel) {
+          dayLabel.textContent = currentWorkout === 'A' ? 'Mon / Fri' : 'Wed';
+        }
+        await renderExercises();
       });
     });
   }
@@ -31,15 +40,28 @@ const WorkoutTab = (() => {
   async function renderExercises() {
     const list = document.getElementById('exercise-list');
     if (!list) return;
-    list.innerHTML = '';
 
+    const currentSeq = ++renderSeq;
     const preset = PRESETS[currentWorkout] || PRESETS['A'];
-    const allExercises = [...(preset.exercises || []), ...customExercises];
+
+    // Deduplicate against presets
+    const existingNames = new Set((preset.exercises || []).map(e => e.name.toLowerCase()));
+    const uniqueCustom = (customExercises || []).filter(e => !existingNames.has(e.name.toLowerCase()));
+    const allExercises = [...(preset.exercises || []), ...uniqueCustom];
+
+    const fragment = document.createDocumentFragment();
 
     for (const ex of allExercises) {
       const lastSets = await Store.getLastValues(ex.name);
+      // Abort if another render started in the meantime
+      if (currentSeq !== renderSeq) return;
       const card = buildExerciseCard(ex, lastSets);
-      list.appendChild(card);
+      fragment.appendChild(card);
+    }
+
+    if (currentSeq === renderSeq) {
+      list.innerHTML = '';
+      list.appendChild(fragment);
     }
   }
 
@@ -245,7 +267,7 @@ const WorkoutTab = (() => {
         });
 
         setData.completed = !!checked;
-        if (Object.keys(setData).length > 1) { // has at least one value besides 'completed'
+        if (Object.keys(setData).length > 1) {
           sets.push(setData);
         }
       });

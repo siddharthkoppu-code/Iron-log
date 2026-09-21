@@ -1,4 +1,4 @@
-// History Tab — Past workouts, inline editing, deletion
+// History Tab — Past workouts, read-only view with deletion support
 const HistoryTab = (() => {
   let initialized = false;
 
@@ -13,14 +13,15 @@ const HistoryTab = (() => {
     const list = document.getElementById('history-list');
     const empty = document.getElementById('history-empty');
 
+    if (!list) return;
     list.innerHTML = '';
 
-    if (!workouts.length) {
-      empty.style.display = '';
+    if (!workouts || !workouts.length) {
+      if (empty) empty.style.display = 'block';
       return;
     }
 
-    empty.style.display = 'none';
+    if (empty) empty.style.display = 'none';
 
     for (const workout of workouts) {
       const card = buildHistoryCard(workout);
@@ -34,7 +35,7 @@ const HistoryTab = (() => {
 
     const dateLabel = formatDateFull(workout.date);
     const typeLabel = workout.type === 'A' ? 'Workout A' :
-                      workout.type === 'B' ? 'Workout B' : 'Custom';
+                      workout.type === 'B' ? 'Workout B' : `Workout ${workout.type || 'A'}`;
 
     card.innerHTML = `
       <div class="history-card-header">
@@ -68,89 +69,83 @@ const HistoryTab = (() => {
     // Delete
     card.querySelector('.history-delete-btn').addEventListener('click', async (e) => {
       e.stopPropagation();
-      if (confirm(`Delete workout from ${dateLabel}?`)) {
+      if (confirm(`Are you sure you want to delete the workout from ${dateLabel}?`)) {
         await Store.deleteWorkout(workout.date);
         card.remove();
         await Gamification.updateStreakDisplay();
-        Gamification.showToast('Workout deleted');
+        Gamification.showToast('Workout deleted', 'default');
+
         // Check if list is now empty
         const list = document.getElementById('history-list');
-        if (!list.children.length) {
-          document.getElementById('history-empty').style.display = '';
+        if (list && !list.children.length) {
+          const empty = document.getElementById('history-empty');
+          if (empty) empty.style.display = 'block';
         }
       }
-    });
-
-    // Inline editing: debounced save on input change
-    card.querySelectorAll('.editable-value').forEach(input => {
-      let timeout;
-      input.addEventListener('input', () => {
-        clearTimeout(timeout);
-        timeout = setTimeout(async () => {
-          const exIdx = parseInt(input.dataset.exIndex);
-          const setIdx = parseInt(input.dataset.setIndex);
-          const field = input.dataset.field;
-          const value = parseFloat(input.value);
-          if (isNaN(value)) return;
-          await Store.updateWorkoutExercise(workout.date, exIdx, setIdx, field, value);
-        }, 600);
-      });
     });
 
     return card;
   }
 
   function buildHistoryBody(workout) {
-    if (!workout.exercises?.length) return '<p style="color:var(--text-muted);font-size:13px">No exercises recorded</p>';
+    if (!workout.exercises || !workout.exercises.length) {
+      return '<p style="color:var(--text-muted);font-size:13px;padding:8px 0;">No exercises recorded</p>';
+    }
 
     let html = '';
-    workout.exercises.forEach((ex, exIdx) => {
+    workout.exercises.forEach((ex) => {
       html += `<div class="history-exercise">
-        <div class="history-exercise-name">${ex.name}</div>`;
+        <div class="history-exercise-name">${ex.name}</div>
+        <div class="history-sets-grid">`;
 
-      ex.sets?.forEach((set, setIdx) => {
-        html += `<div class="history-set">
-          <span style="min-width:46px">Set ${setIdx + 1}</span>`;
-
-        if (ex.type === 'weighted') {
-          html += `
-            <input class="editable-value" type="number" value="${set.weight ?? ''}"
-              data-ex-index="${exIdx}" data-set-index="${setIdx}" data-field="weight" step="0.5">
-            <span>kg ×</span>
-            <input class="editable-value" type="number" value="${set.reps ?? ''}"
-              data-ex-index="${exIdx}" data-set-index="${setIdx}" data-field="reps">
-            <span>reps</span>`;
+      (ex.sets || []).forEach((set, setIdx) => {
+        let setVal = '';
+        if (ex.type === 'weighted' || (!ex.type && set.weight !== undefined)) {
+          setVal = `${set.weight ?? 0} kg × ${set.reps ?? 0} reps`;
         } else if (ex.type === 'reps') {
-          html += `
-            <input class="editable-value" type="number" value="${set.reps ?? ''}"
-              data-ex-index="${exIdx}" data-set-index="${setIdx}" data-field="reps">
-            <span>reps</span>`;
+          setVal = `${set.reps ?? 0} reps`;
         } else if (ex.type === 'timed') {
-          html += `
-            <input class="editable-value" type="number" value="${set.seconds ?? ''}"
-              data-ex-index="${exIdx}" data-set-index="${setIdx}" data-field="seconds">
-            <span>sec</span>`;
+          setVal = `${set.seconds ?? set.time ?? set.reps ?? 0} sec`;
         } else if (ex.type === 'cardio') {
-          html += `
-            <input class="editable-value" type="number" value="${set.minutes ?? ''}"
-              data-ex-index="${exIdx}" data-set-index="${setIdx}" data-field="minutes">
-            <span>min</span>`;
+          setVal = `${set.minutes ?? set.time ?? 0} min`;
+        } else {
+          setVal = `${set.weight ? set.weight + ' kg × ' : ''}${set.reps ? set.reps + ' reps' : ''}`;
         }
 
-        html += `</div>`;
+        const isDone = set.completed !== false;
+        const statusBadge = isDone
+          ? '<span class="history-set-status completed" title="Completed">✓</span>'
+          : '<span class="history-set-status skipped" title="Skipped">—</span>';
+
+        html += `
+          <div class="history-set-row">
+            <span class="history-set-num">Set ${setIdx + 1}</span>
+            <span class="history-set-value">${setVal}</span>
+            ${statusBadge}
+          </div>
+        `;
       });
 
-      html += `</div>`;
+      html += `</div></div>`;
     });
 
     return html;
   }
 
   function formatDateFull(dateStr) {
-    const d = new Date(dateStr + 'T00:00:00');
-    return d.toLocaleDateString('en-US', {
-      weekday: 'short', month: 'short', day: 'numeric', year: 'numeric'
-    });
+    if (!dateStr) return '—';
+    try {
+      const parts = dateStr.split('-');
+      if (parts.length === 3) {
+        const d = new Date(parts[0], parts[1] - 1, parts[2]);
+        return d.toLocaleDateString('en-US', {
+          weekday: 'short', month: 'short', day: 'numeric', year: 'numeric'
+        });
+      }
+      return dateStr;
+    } catch {
+      return dateStr;
+    }
   }
 
   return { init, refresh };
