@@ -9,7 +9,7 @@ const WorkoutTab = (() => {
 
   async function init() {
     customExercises = await Store.getCustomExercises();
-    renderExercises();
+    await renderExercises();
     setupToggle();
     setupAddExercise();
     setupSave();
@@ -30,10 +30,11 @@ const WorkoutTab = (() => {
 
   async function renderExercises() {
     const list = document.getElementById('exercise-list');
+    if (!list) return;
     list.innerHTML = '';
 
-    const preset = PRESETS[currentWorkout];
-    const allExercises = [...preset.exercises, ...customExercises];
+    const preset = PRESETS[currentWorkout] || PRESETS['A'];
+    const allExercises = [...(preset.exercises || []), ...customExercises];
 
     for (const ex of allExercises) {
       const lastSets = await Store.getLastValues(ex.name);
@@ -169,8 +170,10 @@ const WorkoutTab = (() => {
     const modal = document.getElementById('add-exercise-modal');
     const confirmBtn = document.getElementById('custom-ex-add');
 
+    if (!addBtn || !modal || !confirmBtn) return;
+
     addBtn.addEventListener('click', () => {
-      modal.style.display = '';
+      modal.style.display = 'flex';
     });
 
     modal.querySelectorAll('[data-close-modal]').forEach(btn => {
@@ -206,7 +209,7 @@ const WorkoutTab = (() => {
       document.getElementById('custom-ex-name').value = '';
       modal.style.display = 'none';
 
-      renderExercises();
+      await renderExercises();
       Gamification.showToast(`✅ "${name}" added`, 'success');
     });
   }
@@ -214,7 +217,10 @@ const WorkoutTab = (() => {
   // ---- Save Workout ----
 
   function setupSave() {
-    document.getElementById('save-workout-btn').addEventListener('click', saveWorkout);
+    const saveBtn = document.getElementById('save-workout-btn');
+    if (saveBtn) {
+      saveBtn.addEventListener('click', saveWorkout);
+    }
   }
 
   async function saveWorkout() {
@@ -250,7 +256,7 @@ const WorkoutTab = (() => {
     });
 
     if (!exercises.length) {
-      Gamification.showToast('No sets to save. Enter your numbers first!');
+      Gamification.showToast('No sets entered. Fill in some numbers first!');
       return;
     }
 
@@ -259,8 +265,8 @@ const WorkoutTab = (() => {
       await Store.saveWorkout(dateStr, currentWorkout, exercises);
 
       // Check for PRs
-      const prs = Gamification.checkForPRs(exercises);
-      if (prs.length) {
+      const prs = Gamification.checkForPRs(exercises, dateStr);
+      if (prs && prs.length) {
         Gamification.announcePRs(prs);
       } else {
         Gamification.showToast('✅ Workout saved!', 'success');
@@ -270,8 +276,12 @@ const WorkoutTab = (() => {
       await Gamification.updateStreakDisplay();
 
       // Re-render progress/history if they're loaded
-      if (typeof ProgressTab !== 'undefined') ProgressTab.refresh();
-      if (typeof HistoryTab !== 'undefined') HistoryTab.refresh();
+      if (typeof ProgressTab !== 'undefined' && ProgressTab.refresh) {
+        try { await ProgressTab.refresh(); } catch (e) { console.warn(e); }
+      }
+      if (typeof HistoryTab !== 'undefined' && HistoryTab.refresh) {
+        try { await HistoryTab.refresh(); } catch (e) { console.warn(e); }
+      }
 
     } catch (err) {
       console.error('Save failed:', err);

@@ -51,6 +51,7 @@ const Gamification = (() => {
     return allTimePRs;
   }
 
+  // Single-exercise PR check
   function checkPR(exerciseName, sets, dateStr) {
     let newPRFound = null;
     const curPR = allTimePRs[exerciseName] || { weight: 0, reps: 0 };
@@ -74,6 +75,53 @@ const Gamification = (() => {
       showPRNotification(exerciseName, newPRFound.weight, newPRFound.reps);
     }
     return newPRFound;
+  }
+
+  // Multi-exercise PR check (called after saving a complete workout)
+  function checkForPRs(exercises, dateStr) {
+    const date = dateStr || new Date().toISOString().split('T')[0];
+    const newPRs = [];
+
+    if (!exercises || !Array.isArray(exercises)) return newPRs;
+
+    for (const ex of exercises) {
+      if (!ex.name || !ex.sets || !Array.isArray(ex.sets)) continue;
+      const curPR = allTimePRs[ex.name] || { weight: 0, reps: 0 };
+      let bestSetInWorkout = null;
+
+      for (const set of ex.sets) {
+        if (!set.completed && set.completed !== undefined) continue;
+        const w = parseFloat(set.weight) || 0;
+        const r = parseInt(set.reps) || 0;
+        if (w <= 0 && r <= 0) continue;
+
+        if (w > curPR.weight || (w === curPR.weight && r > curPR.reps)) {
+          if (!bestSetInWorkout || w > bestSetInWorkout.weight || (w === bestSetInWorkout.weight && r > bestSetInWorkout.reps)) {
+            bestSetInWorkout = { weight: w, reps: r };
+          }
+        }
+      }
+
+      if (bestSetInWorkout) {
+        allTimePRs[ex.name] = { weight: bestSetInWorkout.weight, reps: bestSetInWorkout.reps, date };
+        newPRs.push({
+          name: ex.name,
+          weight: bestSetInWorkout.weight,
+          reps: bestSetInWorkout.reps
+        });
+      }
+    }
+
+    return newPRs;
+  }
+
+  function announcePRs(prs) {
+    if (!prs || !prs.length) return;
+    prs.forEach((pr, idx) => {
+      setTimeout(() => {
+        showPRNotification(pr.name, pr.weight, pr.reps);
+      }, idx * 600);
+    });
   }
 
   function getPR(exerciseName) {
@@ -140,7 +188,7 @@ const Gamification = (() => {
     }
   }
 
-  // ---- Export Modal & Generators ----
+  // ---- Export Modal & Document Generators ----
 
   function openExportModal() {
     const modal = document.getElementById('export-modal');
@@ -601,6 +649,8 @@ const Gamification = (() => {
     showPRNotification,
     loadPRs,
     checkPR,
+    checkForPRs,
+    announcePRs,
     getPR,
     getAllPRs,
     calculateStreak,

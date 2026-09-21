@@ -16,11 +16,13 @@ const Store = (() => {
   }
 
   function uid() {
-    return auth.currentUser?.uid;
+    return (typeof auth !== 'undefined' && auth.currentUser?.uid) || null;
   }
 
   function userDoc() {
-    return db.collection('users').doc(uid());
+    const currentUid = uid();
+    if (!currentUid || typeof db === 'undefined') return null;
+    return db.collection('users').doc(currentUid);
   }
 
   // ---- LocalStorage Helpers ----
@@ -65,13 +67,16 @@ const Store = (() => {
     // Save to Firestore if signed in
     if (!isGuestMode() && uid()) {
       try {
-        const ref = userDoc().collection('workouts').doc(dateStr);
-        await ref.set({
-          ...payload,
-          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        }, { merge: true });
+        const uDoc = userDoc();
+        if (uDoc) {
+          const ref = uDoc.collection('workouts').doc(dateStr);
+          await ref.set({
+            ...payload,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+          }, { merge: true });
+        }
       } catch (err) {
-        console.warn('Firestore workout save warning, cached locally:', err);
+        console.warn('Firestore workout save notice, cached locally:', err);
       }
     }
 
@@ -81,10 +86,13 @@ const Store = (() => {
   async function getWorkout(dateStr) {
     if (!isGuestMode() && uid()) {
       try {
-        const doc = await userDoc().collection('workouts').doc(dateStr).get();
-        if (doc.exists) return doc.data();
+        const uDoc = userDoc();
+        if (uDoc) {
+          const doc = await uDoc.collection('workouts').doc(dateStr).get();
+          if (doc.exists) return doc.data();
+        }
       } catch (e) {
-        console.warn('Firestore getWorkout failed, falling back to local:', e);
+        console.warn('Firestore getWorkout notice, using local:', e);
       }
     }
     const localWorkouts = getLocal('workouts', []);
@@ -94,16 +102,19 @@ const Store = (() => {
   async function getAllWorkouts() {
     if (!isGuestMode() && uid()) {
       try {
-        const snap = await userDoc().collection('workouts')
-          .orderBy('date', 'desc')
-          .get();
-        const remote = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-        if (remote.length) {
-          setLocal('workouts', remote);
-          return remote;
+        const uDoc = userDoc();
+        if (uDoc) {
+          const snap = await uDoc.collection('workouts')
+            .orderBy('date', 'desc')
+            .get();
+          const remote = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+          if (remote.length) {
+            setLocal('workouts', remote);
+            return remote;
+          }
         }
       } catch (e) {
-        console.warn('Firestore getAllWorkouts failed, falling back to local:', e);
+        console.warn('Firestore getAllWorkouts notice, using local:', e);
       }
     }
     return getLocal('workouts', []).sort((a, b) => b.date.localeCompare(a.date));
@@ -115,9 +126,12 @@ const Store = (() => {
 
     if (!isGuestMode() && uid()) {
       try {
-        await userDoc().collection('workouts').doc(dateStr).delete();
+        const uDoc = userDoc();
+        if (uDoc) {
+          await uDoc.collection('workouts').doc(dateStr).delete();
+        }
       } catch (e) {
-        console.warn('Firestore deleteWorkout failed:', e);
+        console.warn('Firestore deleteWorkout notice:', e);
       }
     }
   }
@@ -163,13 +177,16 @@ const Store = (() => {
 
     if (!isGuestMode() && uid()) {
       try {
-        await userDoc().collection('bodyweight').doc(dateStr).set({
-          date: dateStr,
-          weight: parseFloat(weight),
-          timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        });
+        const uDoc = userDoc();
+        if (uDoc) {
+          await uDoc.collection('bodyweight').doc(dateStr).set({
+            date: dateStr,
+            weight: parseFloat(weight),
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+          });
+        }
       } catch (e) {
-        console.warn('Firestore logBodyWeight failed:', e);
+        console.warn('Firestore logBodyWeight notice:', e);
       }
     }
   }
@@ -177,16 +194,19 @@ const Store = (() => {
   async function getAllBodyWeight() {
     if (!isGuestMode() && uid()) {
       try {
-        const snap = await userDoc().collection('bodyweight')
-          .orderBy('date', 'desc')
-          .get();
-        const remote = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-        if (remote.length) {
-          setLocal('bodyweight', remote);
-          return remote;
+        const uDoc = userDoc();
+        if (uDoc) {
+          const snap = await uDoc.collection('bodyweight')
+            .orderBy('date', 'desc')
+            .get();
+          const remote = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+          if (remote.length) {
+            setLocal('bodyweight', remote);
+            return remote;
+          }
         }
       } catch (e) {
-        console.warn('Firestore getAllBodyWeight failed, using local:', e);
+        console.warn('Firestore getAllBodyWeight notice, using local:', e);
       }
     }
     return getLocal('bodyweight', []).sort((a, b) => b.date.localeCompare(a.date));
@@ -198,9 +218,12 @@ const Store = (() => {
 
     if (!isGuestMode() && uid()) {
       try {
-        await userDoc().collection('bodyweight').doc(dateStr).delete();
+        const uDoc = userDoc();
+        if (uDoc) {
+          await uDoc.collection('bodyweight').doc(dateStr).delete();
+        }
       } catch (e) {
-        console.warn('Firestore deleteBodyWeight failed:', e);
+        console.warn('Firestore deleteBodyWeight notice:', e);
       }
     }
   }
@@ -211,9 +234,12 @@ const Store = (() => {
     setLocal('custom_exercises', exercises);
     if (!isGuestMode() && uid()) {
       try {
-        await userDoc().set({ customExercises: exercises }, { merge: true });
+        const uDoc = userDoc();
+        if (uDoc) {
+          await uDoc.set({ customExercises: exercises }, { merge: true });
+        }
       } catch (e) {
-        console.warn('Firestore saveCustomExercises failed:', e);
+        console.warn('Firestore saveCustomExercises notice:', e);
       }
     }
   }
@@ -221,13 +247,16 @@ const Store = (() => {
   async function getCustomExercises() {
     if (!isGuestMode() && uid()) {
       try {
-        const doc = await userDoc().get();
-        if (doc.exists && doc.data().customExercises) {
-          setLocal('custom_exercises', doc.data().customExercises);
-          return doc.data().customExercises;
+        const uDoc = userDoc();
+        if (uDoc) {
+          const doc = await uDoc.get();
+          if (doc.exists && doc.data().customExercises) {
+            setLocal('custom_exercises', doc.data().customExercises);
+            return doc.data().customExercises;
+          }
         }
       } catch (e) {
-        console.warn('Firestore getCustomExercises failed, using local:', e);
+        console.warn('Firestore getCustomExercises notice, using local:', e);
       }
     }
     return getLocal('custom_exercises', []);
@@ -237,29 +266,36 @@ const Store = (() => {
 
   async function syncLocalToFirestore() {
     if (isGuestMode() || !uid()) return;
+    const uDoc = userDoc();
+    if (!uDoc) return;
+
     const localWorkouts = getLocal('workouts', []);
     const localBW = getLocal('bodyweight', []);
     const localCustom = getLocal('custom_exercises', []);
 
-    for (const w of localWorkouts) {
-      await userDoc().collection('workouts').doc(w.date).set({
-        date: w.date,
-        type: w.type || 'A',
-        exercises: w.exercises || [],
-        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-      }, { merge: true });
-    }
+    try {
+      for (const w of localWorkouts) {
+        await uDoc.collection('workouts').doc(w.date).set({
+          date: w.date,
+          type: w.type || 'A',
+          exercises: w.exercises || [],
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+      }
 
-    for (const b of localBW) {
-      await userDoc().collection('bodyweight').doc(b.date).set({
-        date: b.date,
-        weight: b.weight,
-        timestamp: firebase.firestore.FieldValue.serverTimestamp()
-      }, { merge: true });
-    }
+      for (const b of localBW) {
+        await uDoc.collection('bodyweight').doc(b.date).set({
+          date: b.date,
+          weight: b.weight,
+          timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+      }
 
-    if (localCustom.length) {
-      await userDoc().set({ customExercises: localCustom }, { merge: true });
+      if (localCustom.length) {
+        await uDoc.set({ customExercises: localCustom }, { merge: true });
+      }
+    } catch (e) {
+      console.warn('Firestore sync notice:', e);
     }
   }
 
